@@ -1,12 +1,12 @@
 <?php
-$host     = "localhost";
-$user     = "root";
-$password = "";
-$database = "uts_pbd_2026"; // Sesuaikan nama database kamu
+$host = "localhost";
+$user = "root";
+$pass = "";
+$db   = "uts_pbd_2026"; // Sesuaikan dengan nama database Anda
 
-$conn = mysqli_connect($host, $user, $password, $database);
+$conn = mysqli_connect($host, $user, $pass, $db);
 
 if (!$conn) {
-    die("Koneksi gagal: " . mysqli_connect_error());
+    die("Koneksi database gagal: " . mysqli_connect_error());
 }
 ?>
