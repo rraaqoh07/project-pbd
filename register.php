@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['btn_register'])) {
             <select name="idrole" class="form-select" required>
                 <option value="">-- Pilih Role Akses --</option>
                 <?php
-                $roles = mysqli_query($conn, "SELECT * FROM role WHERE nama_role IN ('Admin', 'Kasir')");
+                $roles = mysqli_query($conn, "SELECT MIN(idrole) AS idrole, nama_role FROM role WHERE nama_role IN ('Admin', 'Kasir') GROUP BY nama_role");
                 while ($r = mysqli_fetch_assoc($roles)) {
                     echo "<option value='{$r['idrole']}'>{$r['nama_role']}</option>";
                 }

@@ -1,5 +1,4 @@
 <?php
-<<<<<<< HEAD
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -21,31 +20,18 @@ if ($is_kasir && $current_page !== 'transaksi.php') {
     exit;
 }
 
-=======
-include 'koneksi.php';
-
->>>>>>> 8ce36463381af13c1129a70053a82a4fc5beb6fa
 // Hitung Ringkasan Data
 $total_barang = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM barang"))['total'] ?? 0;
 $total_satuan = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM satuan"))['total'] ?? 0;
 $total_vendor = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM vendor"))['total'] ?? 0;
 $total_user   = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM user"))['total'] ?? 0;
-<<<<<<< HEAD
-=======
-
-$current_page = basename($_SERVER['PHP_SELF']);
->>>>>>> 8ce36463381af13c1129a70053a82a4fc5beb6fa
 ?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<<<<<<< HEAD
     <title>Toko Kelontong Bakti - Sistem Informasi</title>
-=======
-    <title>Toko Kelontong Bakti - Master Data</title>
->>>>>>> 8ce36463381af13c1129a70053a82a4fc5beb6fa
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -59,11 +45,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         .bg-pink-pastel { background-color: #f472b6 !important; }
         .text-pink-pastel { color: #db2777 !important; }
 
-<<<<<<< HEAD
         .nav-pills-custom .nav-link { color: #64748b; font-weight: 600; border-radius: 12px; padding: 10px 18px; margin-right: 8px; margin-bottom: 6px; background: #ffffff; border: 1px solid #e2e8f0; }
-=======
-        .nav-pills-custom .nav-link { color: #64748b; font-weight: 600; border-radius: 12px; padding: 10px 18px; margin-right: 8px; background: #ffffff; border: 1px solid #e2e8f0; }
->>>>>>> 8ce36463381af13c1129a70053a82a4fc5beb6fa
         
         .nav-pills-custom .nav-link.active { 
             background: #f472b6 !important; 
@@ -74,10 +56,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
         .btn-primary { background-color: #f472b6 !important; border-color: #f472b6 !important; color: #ffffff !important; }
         .btn-primary:hover { background-color: #ec4899 !important; border-color: #ec4899 !important; }
-<<<<<<< HEAD
-=======
-        
->>>>>>> 8ce36463381af13c1129a70053a82a4fc5beb6fa
         .text-primary { color: #db2777 !important; }
 
         .main-card { border: none; border-radius: 20px; background: #ffffff; box-shadow: 0 4px 25px rgba(0, 0, 0, 0.04); }
@@ -90,18 +68,13 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
 <nav class="navbar navbar-expand-lg navbar-top sticky-top py-3">
     <div class="container-fluid px-4">
-<<<<<<< HEAD
         <a class="navbar-brand d-flex align-items-center fw-bold text-pink-pastel fs-5" href="<?= $is_kasir ? 'transaksi.php' : 'barang.php' ?>">
-=======
-        <a class="navbar-brand d-flex align-items-center fw-bold text-pink-pastel fs-5" href="barang.php">
->>>>>>> 8ce36463381af13c1129a70053a82a4fc5beb6fa
             <div class="bg-pink-pastel text-white p-2 rounded-3 me-2 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
                 <i class="fa-solid fa-store"></i>
             </div>
             TOKO KELONTONG BAKTI
         </a>
         <div class="d-flex align-items-center gap-3 ms-auto">
-<<<<<<< HEAD
             <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">
                 <i class="fa-solid fa-user-circle text-pink-pastel me-1"></i> 
                 <?= htmlspecialchars($_SESSION['username']) ?> 
@@ -110,23 +83,14 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <a href="logout.php" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-semibold" onclick="return confirm('Keluar dari sistem?')">
                 <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
             </a>
-=======
-            <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">
-                <i class="fa-solid fa-circle text-success me-1 fs-6"></i> Database Connected
-            </span>
->>>>>>> 8ce36463381af13c1129a70053a82a4fc5beb6fa
         </div>
     </div>
 </nav>
 
 <div class="container-fluid px-4 py-4">
 
-<<<<<<< HEAD
     <?php if (!$is_kasir): ?>
     <!-- RINGKASAN STATISTIK (Hanya tampil untuk Admin) -->
-=======
-    <!-- RINGKASAN STATISTIK -->
->>>>>>> 8ce36463381af13c1129a70053a82a4fc5beb6fa
     <div class="row g-3 mb-4">
         <div class="col-12 col-sm-6 col-xl-3">
             <div class="card card-stat p-3">
@@ -173,7 +137,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </div>
         </div>
     </div>
-<<<<<<< HEAD
     <?php endif; ?>
 
     <!-- NAVIGASI MENU BERDASARKAN ROLE -->
@@ -190,18 +153,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
         
         <!-- Menu Penjualan (Bisa diakses Admin & Kasir) -->
         <a href="transaksi.php" class="nav-link <?= ($current_page == 'transaksi.php') ? 'active' : '' ?>"><i class="fa-solid fa-cart-shopping me-2"></i>Transaksi Penjualan</a>
-=======
-
-    <!-- NAVIGASI MENU MASTER DATA & TRANSAKSI -->
-    <div class="d-flex flex-wrap nav-pills-custom mb-4">
-        <a href="barang.php" class="nav-link <?= ($current_page == 'barang.php') ? 'active' : '' ?>"><i class="fa-solid fa-box me-2"></i>Data Barang</a>
-        <a href="satuan.php" class="nav-link <?= ($current_page == 'satuan.php') ? 'active' : '' ?>"><i class="fa-solid fa-scale-balanced me-2"></i>Data Satuan</a>
-        <a href="vendor.php" class="nav-link <?= ($current_page == 'vendor.php') ? 'active' : '' ?>"><i class="fa-solid fa-truck-field me-2"></i>Data Vendor</a>
-        <a href="user.php" class="nav-link <?= ($current_page == 'user.php') ? 'active' : '' ?>"><i class="fa-solid fa-users me-2"></i>Data User</a>
-        <a href="role.php" class="nav-link <?= ($current_page == 'role.php') ? 'active' : '' ?>"><i class="fa-solid fa-user-shield me-2"></i>Data Role</a>
-        <a href="margin.php" class="nav-link <?= ($current_page == 'margin.php') ? 'active' : '' ?>"><i class="fa-solid fa-percent me-2"></i>Margin Penjualan</a>
-        <a href="transaksi.php" class="nav-link <?= ($current_page == 'transaksi.php') ? 'active' : '' ?>"><i class="fa-solid fa-cart-shopping me-2"></i>Input Transaksi (SP & Trigger)</a>
->>>>>>> 8ce36463381af13c1129a70053a82a4fc5beb6fa
     </div>
 
     <div class="main-card p-4">
