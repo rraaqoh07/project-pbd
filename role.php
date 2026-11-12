@@ -1,4 +1,5 @@
 <?php
+include 'koneksi.php';
 include 'header.php';
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
@@ -31,7 +32,7 @@ if ($action == 'edit' && $id > 0) {
 }
 ?>
 
-<h4 class="fw-bold mb-1"><i class="fa-solid fa-user-shield text-primary me-2"></i>Kelola Data Role</h4>
+<h4 class="fw-bold mb-1"><i class="fa-solid fa-user-shield text-pink-pastel me-2"></i>Kelola Data Role</h4>
 <p class="text-muted small mb-4">Pengelompokan jabatan hak akses staf toko.</p>
 
 <?php if ($message): ?>

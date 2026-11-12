@@ -2,7 +2,7 @@
 $host = "localhost";
 $user = "root";
 $pass = "";
-$db   = "uts_pbd_2026"; // Sesuaikan dengan nama database Anda
+$db   = "uts_pbd_2026";
 
 $conn = mysqli_connect($host, $user, $pass, $db);
 

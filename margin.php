@@ -1,4 +1,5 @@
 <?php
+include 'koneksi.php';
 include 'header.php';
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
@@ -33,7 +34,7 @@ if ($action == 'edit' && $id > 0) {
 }
 ?>
 
-<h4 class="fw-bold mb-1"><i class="fa-solid fa-percent text-primary me-2"></i>Margin Penjualan</h4>
+<h4 class="fw-bold mb-1"><i class="fa-solid fa-percent text-pink-pastel me-2"></i>Margin Penjualan</h4>
 <p class="text-muted small mb-4">Pengaturan persentase margin keuntungan toko.</p>
 
 <?php if ($message): ?>

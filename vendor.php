@@ -1,4 +1,5 @@
 <?php
+include 'koneksi.php';
 include 'header.php';
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
@@ -33,7 +34,7 @@ if ($action == 'edit' && $id > 0) {
 }
 ?>
 
-<h4 class="fw-bold mb-1"><i class="fa-solid fa-truck-field text-primary me-2"></i>Kelola Data Vendor</h4>
+<h4 class="fw-bold mb-1"><i class="fa-solid fa-truck-field text-pink-pastel me-2"></i>Kelola Data Vendor</h4>
 <p class="text-muted small mb-4">Daftar distributor / pemasok stok Toko Kelontong Bakti.</p>
 
 <?php if ($message): ?>
