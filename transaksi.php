@@ -11,10 +11,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['btn_transaksi'])) {
     $jumlah       = intval($_POST['jumlah']);
     $harga_satuan = intval($_POST['harga_satuan']);
     
+<<<<<<< HEAD
+=======
+    // MEMANGGIL STORED PROCEDURE TRANSAKSI PENJUALAN
+>>>>>>> 8ce36463381af13c1129a70053a82a4fc5beb6fa
     $sql = "CALL sp_transaksi_penjualan($iduser, $idbarang, $jumlah, $harga_satuan)";
     
     if (mysqli_query($conn, $sql)) {
         while (mysqli_more_results($conn) && mysqli_next_result($conn)) {;}
+<<<<<<< HEAD
+=======
+        // TRIGGER trg_update_kartu_stok_penjualan OTOMATIS BERJALAN DI BACKGROUND DATABASE
+>>>>>>> 8ce36463381af13c1129a70053a82a4fc5beb6fa
         $message  = "Transaksi Penjualan Berhasil Diproses!";
         $msg_type = "success";
     } else {
@@ -24,7 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['btn_transaksi'])) {
 }
 ?>
 
+<<<<<<< HEAD
 <h4 class="fw-bold mb-1"><i class="fa-solid fa-cart-shopping text-pink-pastel me-2"></i>Transaksi Penjualan</h4>
+=======
+<h4 class="fw-bold mb-1"><i class="fa-solid fa-cart-shopping text-pink-pastel me-2"></i>Input Transaksi Penjualan</h4>
+>>>>>>> 8ce36463381af13c1129a70053a82a4fc5beb6fa
 <p class="text-muted small mb-4">Kelola dan catat transaksi penjualan barang toko.</p>
 
 <?php if ($message): ?>
@@ -37,9 +49,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['btn_transaksi'])) {
             <h6 class="fw-bold mb-3">Kasir / Form Penjualan</h6>
             <form method="POST" action="transaksi.php">
                 <div class="mb-3">
+<<<<<<< HEAD
                     <label class="form-label small fw-bold">Kasir Bertugas</label>
                     <input type="hidden" name="iduser" value="<?= $_SESSION['iduser'] ?>">
                     <input type="text" class="form-control bg-white fw-semibold" value="<?= htmlspecialchars($_SESSION['username']) ?> (<?= htmlspecialchars($_SESSION['nama_role']) ?>)" readonly>
+=======
+                    <label class="form-label small fw-bold">Kasir (User)</label>
+                    <select name="iduser" class="form-select" required>
+                        <option value="">-- Pilih User --</option>
+                        <?php
+                        $u = mysqli_query($conn, "SELECT * FROM user");
+                        while ($row_u = mysqli_fetch_assoc($u)) {
+                            echo "<option value='{$row_u['iduser']}'>{$row_u['username']}</option>";
+                        }
+                        ?>
+                    </select>
+>>>>>>> 8ce36463381af13c1129a70053a82a4fc5beb6fa
                 </div>
                 <div class="mb-3">
                     <label class="form-label small fw-bold">Barang Yang Dibeli</label>
@@ -48,7 +73,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['btn_transaksi'])) {
                         <?php
                         $b = mysqli_query($conn, "SELECT * FROM barang WHERE status=1");
                         while ($row_b = mysqli_fetch_assoc($b)) {
+<<<<<<< HEAD
                             echo "<option value='{$row_b['idbarang']}'>{$row_b['nama']} (Rp " . number_format($row_b['harga'], 0, ',', '.') . ")</option>";
+=======
+                            echo "<option value='{$row_b['idbarang']}'>{$row_b['nama']} (Rp {$row_b['harga']})</option>";
+>>>>>>> 8ce36463381af13c1129a70053a82a4fc5beb6fa
                         }
                         ?>
                     </select>
