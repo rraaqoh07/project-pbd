@@ -135,12 +135,12 @@ $margin_aktif    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT persen FROM ma
     <!-- NAVIGASI PROSES BISNIS & MASTER DATA BERDASARKAN ROLE -->
     <div class="d-flex flex-wrap nav-pills-custom mb-4">
         <?php if (!$is_kasir): ?>
-            <a href="pengadaan.php" class="nav-link <?= ($current_page == 'pengadaan.php') ? 'active' : '' ?>"><i class="fa-solid fa-file-invoice me-1"></i>1. Pengadaan</a>
-            <a href="penerimaan.php" class="nav-link <?= ($current_page == 'penerimaan.php') ? 'active' : '' ?>"><i class="fa-solid fa-truck-ramp-box me-1"></i>2. Penerimaan</a>
+            <a href="pengadaan.php" class="nav-link <?= ($current_page == 'pengadaan.php') ? 'active' : '' ?>"><i class="fa-solid fa-file-invoice me-1"></i>Pengadaan</a>
+            <a href="penerimaan.php" class="nav-link <?= ($current_page == 'penerimaan.php') ? 'active' : '' ?>"><i class="fa-solid fa-truck-ramp-box me-1"></i>Penerimaan</a>
         <?php endif; ?>
         
         <!-- Menu Penjualan (Bisa diakses Admin & Kasir) -->
-        <a href="penjualan.php" class="nav-link <?= ($current_page == 'penjualan.php') ? 'active' : '' ?>"><i class="fa-solid fa-cart-shopping me-1"></i>3. Penjualan (Kasir)</a>
+        <a href="penjualan.php" class="nav-link <?= ($current_page == 'penjualan.php') ? 'active' : '' ?>"><i class="fa-solid fa-cart-shopping me-1"></i>Penjualan (Kasir)</a>
         
         <?php if (!$is_kasir): ?>
             <a href="kartu_stok.php" class="nav-link <?= ($current_page == 'kartu_stok.php') ? 'active' : '' ?>"><i class="fa-solid fa-clipboard-list me-1"></i>Kartu Stok</a>
