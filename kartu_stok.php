@@ -4,10 +4,8 @@ include 'header.php';
 
 // Ambil data kartu stok dengan JOIN ke tabel barang untuk menghindari Undefined array key "nama_barang"
 $query = mysqli_query($conn, "
-    SELECT kartu_stok.*, barang.nama_barang 
-    FROM kartu_stok 
-    LEFT JOIN barang ON kartu_stok.idbarang = barang.idbarang 
-    ORDER BY kartu_stok.idkartu_stok DESC
+    SELECT * FROM v_kartu_stok 
+    ORDER BY idkartu_stok DESC
 ");
 ?>
 
