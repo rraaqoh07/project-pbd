@@ -2,11 +2,8 @@
 include 'koneksi.php';
 include 'header.php';
 
-// Ambil data kartu stok dengan JOIN ke tabel barang untuk menghindari Undefined array key "nama_barang"
-$query = mysqli_query($conn, "
-    SELECT * FROM v_kartu_stok 
-    ORDER BY idkartu_stok DESC
-");
+// Mengambil data dari View v_kartu_stok
+$query = mysqli_query($conn, "SELECT * FROM v_kartu_stok ORDER BY idkartu_stok DESC");
 ?>
 
 <div class="container-fluid px-4">
@@ -32,14 +29,13 @@ $query = mysqli_query($conn, "
                         <?php while ($row = mysqli_fetch_assoc($query)): ?>
                             <tr>
                                 <td class="fw-bold text-pink-pastel">#STK-<?php echo $row['idkartu_stok'] ?? ''; ?></td>
-                                <td><?php echo $row['created_at'] ?? '-'; ?></td>
+                                <td><?php echo $row['tanggal'] ?? '-'; ?></td>
                                 <td>
                                     <div class="fw-semibold"><?php echo $row['nama_barang'] ?? 'Barang Tidak Ditemukan'; ?></div>
                                     <small class="text-muted">
                                         <?php 
-                                        $idtransaksi = $row['idtransaksi'] ?? null;
-                                        if (!empty($idtransaksi)) {
-                                            echo "Ref Transaksi: #" . $idtransaksi;
+                                        if (!empty($row['idtransaksi'])) {
+                                            echo "Ref Transaksi: #" . $row['idtransaksi'];
                                         } else {
                                             echo "Mutasi Sistem";
                                         }
@@ -47,7 +43,7 @@ $query = mysqli_query($conn, "
                                     </small>
                                 </td>
                                 <td>
-                                    <?php if (($row['jenis_transaksi'] ?? '') == 'M'): ?>
+                                    <?php if ($row['masuk'] > 0): ?>
                                         <span class="badge bg-success-subtle text-success border border-success-subtle">Masuk</span>
                                     <?php else: ?>
                                         <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Keluar</span>
@@ -55,7 +51,7 @@ $query = mysqli_query($conn, "
                                 </td>
                                 <td class="text-success fw-bold">+<?php echo $row['masuk'] ?? 0; ?></td>
                                 <td class="text-danger fw-bold">-<?php echo $row['keluar'] ?? 0; ?></td>
-                                <td class="fw-bold"><?php echo $row['stock'] ?? 0; ?> unit</td>
+                                <td class="fw-bold"><?php echo $row['stok_akhir'] ?? 0; ?> unit</td>
                             </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
