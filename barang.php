@@ -2,137 +2,178 @@
 include 'koneksi.php';
 include 'header.php';
 
-$action   = isset($_GET['action']) ? $_GET['action'] : '';
-$id       = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$message  = ""; 
-$msg_type = "";
+$pesan = "";
+$tipe_pesan = "success";
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $jenis    = mysqli_real_escape_string($conn, $_POST['jenis']);
+// 1. Tambah Barang Baru
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['btn_simpan'])) {
     $nama     = mysqli_real_escape_string($conn, $_POST['nama']);
-    $idsatuan = intval($_POST['idsatuan']);
-    $status   = intval($_POST['status']);
-    $harga    = intval($_POST['harga']);
-    
-    if (isset($_POST['btn_save'])) {
-        // MEMANGGIL STORED PROCEDURE SP_TAMBAH_BARANG
-        $sql = "CALL sp_tambah_barang('$jenis', '$nama', $idsatuan, $status, $harga)";
-        if (mysqli_query($conn, $sql)) { 
-            while (mysqli_more_results($conn) && mysqli_next_result($conn)) {;}
-            $message  = "Barang berhasil disimpan!"; 
-            $msg_type = "success"; 
-        } else {
-            $message  = "Gagal Simpan: " . mysqli_error($conn); 
-            $msg_type = "danger";
-        }
-    } elseif (isset($_POST['btn_update'])) {
-        $idbarang = intval($_POST['idbarang']);
-        $sql      = "UPDATE barang SET jenis='$jenis', nama='$nama', idsatuan=$idsatuan, status=$status, harga=$harga WHERE idbarang=$idbarang";
-        if (mysqli_query($conn, $sql)) { 
-            $message  = "Barang berhasil diperbarui!"; 
-            $msg_type = "success"; 
-        }
+    $jenis    = mysqli_real_escape_string($conn, $_POST['jenis']);
+    $idsatuan = (int)$_POST['idsatuan'];
+    $harga    = (int)$_POST['harga'];
+    $status   = (int)$_POST['status'];
+
+    $sql = "INSERT INTO barang (jenis, nama, idsatuan, status, harga) VALUES ('$jenis', '$nama', $idsatuan, $status, $harga)";
+    if (mysqli_query($conn, $sql)) {
+        $pesan = "Produk baru berhasil ditambahkan ke katalog!";
+    } else {
+        $pesan = "Gagal menambahkan produk: " . mysqli_error($conn);
+        $tipe_pesan = "danger";
     }
 }
 
-if ($action == 'delete' && $id > 0) {
-    $sql = "DELETE FROM barang WHERE idbarang=$id";
-    if (mysqli_query($conn, $sql)) { 
-        $message  = "Barang berhasil dihapus!"; 
-        $msg_type = "danger"; 
+// 2. Update Data Barang
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['btn_update'])) {
+    $idbarang = (int)$_POST['idbarang'];
+    $nama     = mysqli_real_escape_string($conn, $_POST['nama']);
+    $jenis    = mysqli_real_escape_string($conn, $_POST['jenis']);
+    $idsatuan = (int)$_POST['idsatuan'];
+    $harga    = (int)$_POST['harga'];
+    $status   = (int)$_POST['status'];
+
+    $sql = "UPDATE barang SET jenis='$jenis', nama='$nama', idsatuan=$idsatuan, status=$status, harga=$harga WHERE idbarang=$idbarang";
+    if (mysqli_query($conn, $sql)) {
+        $pesan = "Data produk berhasil diperbarui!";
+    } else {
+        $pesan = "Gagal memperbarui produk: " . mysqli_error($conn);
+        $tipe_pesan = "danger";
     }
 }
 
+// 3. Hapus Barang
+if (isset($_GET['hapus'])) {
+    $id = (int)$_GET['hapus'];
+    if (mysqli_query($conn, "DELETE FROM barang WHERE idbarang=$id")) {
+        $pesan = "Produk berhasil dihapus dari katalog!";
+    } else {
+        $pesan = "Produk tidak dapat dihapus karena sudah tercatat dalam riwayat transaksi.";
+        $tipe_pesan = "danger";
+    }
+}
+
+// Ambil data jika sedang mode Edit
 $edit_data = null;
-if ($action == 'edit' && $id > 0) {
-    $res       = mysqli_query($conn, "SELECT * FROM barang WHERE idbarang=$id");
-    $edit_data = mysqli_fetch_assoc($res);
+if (isset($_GET['edit'])) {
+    $id_edit = (int)$_GET['edit'];
+    $edit_data = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM barang WHERE idbarang=$id_edit"));
 }
 ?>
 
 <h4 class="fw-bold mb-1"><i class="fa-solid fa-box text-pink-pastel me-2"></i>Kelola Data Barang</h4>
 <p class="text-muted small mb-4">Katalog produk yang dijual di Toko Kelontong Bakti.</p>
 
-<?php if ($message): ?>
-    <div class="alert alert-<?= $msg_type ?> alert-dismissible fade show"><?= $message ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+<?php if (!empty($pesan)): ?>
+    <div class="alert alert-<?= $tipe_pesan ?> alert-dismissible fade show rounded-3 small">
+        <i class="fa-solid <?= $tipe_pesan == 'success' ? 'fa-circle-check' : 'fa-circle-exclamation' ?> me-1"></i> <?= $pesan ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 <?php endif; ?>
 
-<div class="bg-light p-3 rounded-4 mb-4 border">
-    <form method="POST" action="barang.php">
-        <?php if ($edit_data): ?><input type="hidden" name="idbarang" value="<?= $edit_data['idbarang'] ?>"><?php endif; ?>
+<!-- FORM INPUT / EDIT BARANG -->
+<div class="card border rounded-4 p-3 mb-4 bg-light bg-opacity-50">
+    <form method="POST">
+        <?php if ($edit_data): ?>
+            <input type="hidden" name="idbarang" value="<?= $edit_data['idbarang'] ?>">
+        <?php endif; ?>
+
         <div class="row g-3">
             <div class="col-md-3">
-                <label class="form-label small fw-bold">Nama Produk</label>
-                <input type="text" name="nama" class="form-control" value="<?= $edit_data['nama'] ?? '' ?>" required>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small fw-bold">Jenis (A/B)</label>
-                <input type="text" name="jenis" class="form-control" maxlength="1" value="<?= $edit_data['jenis'] ?? 'A' ?>" required>
+                <label class="form-label small fw-semibold">Nama Produk</label>
+                <input type="text" name="nama" class="form-control rounded-3" placeholder="Contoh: Beras Premium 5Kg" value="<?= htmlspecialchars($edit_data['nama'] ?? '') ?>" required>
             </div>
             <div class="col-md-3">
-                <label class="form-label small fw-bold">Satuan</label>
-                <select name="idsatuan" class="form-select" required>
+                <label class="form-label small fw-semibold">Kategori / Jenis Produk</label>
+                <select name="jenis" class="form-select rounded-3" required>
+                    <option value="A" <?= (isset($edit_data['jenis']) && $edit_data['jenis'] == 'A') ? 'selected' : '' ?>>A - Sembako / Kebutuhan Pokok</option>
+                    <option value="B" <?= (isset($edit_data['jenis']) && $edit_data['jenis'] == 'B') ? 'selected' : '' ?>>B - Produk Kemasan / Rumah Tangga</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold">Satuan</label>
+                <select name="idsatuan" class="form-select rounded-3" required>
                     <option value="">-- Pilih Satuan --</option>
                     <?php
-                    $sat = mysqli_query($conn, "SELECT * FROM satuan");
-                    while ($s = mysqli_fetch_assoc($sat)) {
-                        $sel = ($edit_data && $edit_data['idsatuan'] == $s['idsatuan']) ? 'selected' : '';
-                        echo "<option value='{$s['idsatuan']}' $sel>{$s['nama_satuan']}</option>";
-                    }
+                    $q_sat = mysqli_query($conn, "SELECT * FROM satuan WHERE status=1 ORDER BY nama_satuan ASC");
+                    while ($s = mysqli_fetch_assoc($q_sat)):
+                        $sel = (isset($edit_data['idsatuan']) && $edit_data['idsatuan'] == $s['idsatuan']) ? 'selected' : '';
                     ?>
+                    <option value="<?= $s['idsatuan'] ?>" <?= $sel ?>><?= $s['nama_satuan'] ?></option>
+                    <?php endwhile; ?>
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label small fw-bold">Harga (Rp)</label>
-                <input type="number" name="harga" class="form-control" value="<?= $edit_data['harga'] ?? 0 ?>" required>
+                <label class="form-label small fw-semibold">Harga Beli Dasar (Rp)</label>
+                <input type="number" name="harga" class="form-control rounded-3" min="0" value="<?= $edit_data['harga'] ?? 0 ?>" required>
             </div>
             <div class="col-md-2">
-                <label class="form-label small fw-bold">Status</label>
-                <select name="status" class="form-select">
-                    <option value="1" <?= ($edit_data && $edit_data['status'] == 1) ? 'selected' : '' ?>>Aktif</option>
-                    <option value="0" <?= ($edit_data && $edit_data['status'] == 0) ? 'selected' : '' ?>>Non-Aktif</option>
+                <label class="form-label small fw-semibold">Status</label>
+                <select name="status" class="form-select rounded-3">
+                    <option value="1" <?= (!isset($edit_data['status']) || $edit_data['status'] == 1) ? 'selected' : '' ?>>Aktif</option>
+                    <option value="0" <?= (isset($edit_data['status']) && $edit_data['status'] == 0) ? 'selected' : '' ?>>Nonaktif</option>
                 </select>
             </div>
-            <div class="col-12 text-end">
-                <?php if ($edit_data): ?><a href="barang.php" class="btn btn-light me-2">Batal</a><?php endif; ?>
-                <button type="submit" name="<?= $edit_data ? 'btn_update' : 'btn_save' ?>" class="btn btn-primary fw-bold">
-                    <?= $edit_data ? 'Update Barang' : 'Simpan Barang (SP)' ?>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-3">
+            <?php if ($edit_data): ?>
+                <a href="barang.php" class="btn btn-outline-secondary rounded-3 px-4 fw-semibold">Batal</a>
+                <button type="submit" name="btn_update" class="btn btn-primary rounded-3 px-4 fw-semibold">
+                    <i class="fa-solid fa-save me-1"></i> Simpan Perubahan
                 </button>
-            </div>
+            <?php else: ?>
+                <button type="submit" name="btn_simpan" class="btn btn-primary rounded-3 px-4 fw-semibold">
+                    Simpan Barang
+                </button>
+            <?php endif; ?>
         </div>
     </form>
 </div>
 
+<!-- TABEL DAFTAR BARANG -->
 <div class="table-responsive">
     <table class="table align-middle">
         <thead>
             <tr>
                 <th>ID</th>
                 <th>Nama Barang</th>
-                <th>Jenis</th>
+                <th>Kategori / Jenis</th>
                 <th>Satuan</th>
-                <th>Harga Jual</th>
+                <th>Harga Dasar</th>
                 <th>Status</th>
-                <th class="text-center">Aksi</th>
+                <th>Aksi</th>
             </tr>
         </thead>
         <tbody>
             <?php
-            // MEMANGGIL DATABASE VIEW v_katalog_barang
-            $query = "SELECT * FROM v_katalog_barang ORDER BY idbarang DESC";
-            $data  = mysqli_query($conn, $query);
-            while ($row = mysqli_fetch_assoc($data)):
+            $q_brg = mysqli_query($conn, "SELECT b.*, s.nama_satuan FROM barang b JOIN satuan s ON b.idsatuan = s.idsatuan ORDER BY b.idbarang DESC");
+            while ($row = mysqli_fetch_assoc($q_brg)):
             ?>
             <tr>
-                <td>#<?= $row['idbarang'] ?></td>
-                <td class="fw-bold"><?= $row['nama_barang'] ?></td>
-                <td><span class="badge bg-secondary border"><?= $row['jenis'] ?></span></td>
-                <td><?= $row['nama_satuan'] ?></td>
+                <td class="fw-bold text-muted">#<?= $row['idbarang'] ?></td>
+                <td class="fw-semibold"><?= htmlspecialchars($row['nama']) ?></td>
+                <td>
+                    <?php if ($row['jenis'] == 'A'): ?>
+                        <span class="badge bg-secondary-subtle text-dark border">A - Sembako / Pokok</span>
+                    <?php else: ?>
+                        <span class="badge bg-light text-secondary border">B - Kemasan / Rumah Tangga</span>
+                    <?php endif; ?>
+                </td>
+                <td><?= htmlspecialchars($row['nama_satuan']) ?></td>
                 <td class="fw-bold text-pink-pastel">Rp <?= number_format($row['harga'], 0, ',', '.') ?></td>
-                <td><span class="badge bg-<?= $row['status'] == 1 ? 'success' : 'danger' ?>-subtle text-<?= $row['status'] == 1 ? 'success' : 'danger' ?> px-3 py-2 rounded-pill"><?= $row['status'] == 1 ? 'Aktif' : 'Non-Aktif' ?></span></td>
-                <td class="text-center">
-                    <a href="barang.php?action=edit&id=<?= $row['idbarang'] ?>" class="btn btn-action btn-warning text-white me-1"><i class="fa-solid fa-pen"></i></a>
-                    <a href="barang.php?action=delete&id=<?= $row['idbarang'] ?>" class="btn btn-action btn-danger" onclick="return confirm('Hapus barang ini?')"><i class="fa-solid fa-trash"></i></a>
+                <td>
+                    <?php if ($row['status'] == 1): ?>
+                        <span class="badge bg-success-subtle text-success rounded-pill px-3">Aktif</span>
+                    <?php else: ?>
+                        <span class="badge bg-danger-subtle text-danger rounded-pill px-3">Nonaktif</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <a href="barang.php?edit=<?= $row['idbarang'] ?>" class="btn btn-warning btn-action text-white me-1" title="Edit">
+                        <i class="fa-solid fa-pen"></i>
+                    </a>
+                    <a href="barang.php?hapus=<?= $row['idbarang'] ?>" class="btn btn-danger btn-action" title="Hapus" onclick="return confirm('Hapus produk ini?')">
+                        <i class="fa-solid fa-trash"></i>
+                    </a>
                 </td>
             </tr>
             <?php endwhile; ?>
