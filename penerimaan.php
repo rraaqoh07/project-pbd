@@ -2,147 +2,185 @@
 include 'koneksi.php';
 include 'header.php';
 
-$message = ""; $msg_type = "";
-$selected_po = isset($_GET['idpo']) ? intval($_GET['idpo']) : 0;
-$active_trm  = isset($_GET['idtrm']) ? intval($_GET['idtrm']) : 0;
+$pesan = "";
+$tipe_pesan = "success";
 
-// 1. Buat Header Penerimaan untuk PO tertentu (Call SP)
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['btn_buat_penerimaan'])) {
-    $idpengadaan = intval($_POST['idpengadaan']);
+// 1. Proses Dokumen Penerimaan Baru (Memanggil SP sp_buat_penerimaan)
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['btn_buat_trm'])) {
+    $idpengadaan = (int)$_POST['idpengadaan'];
     $iduser      = $_SESSION['iduser'];
-    
-    mysqli_query($conn, "CALL sp_buat_penerimaan($idpengadaan, $iduser, @new_trm)");
-    $row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT @new_trm AS id"));
-    header("Location: penerimaan.php?idpo=$idpengadaan&idtrm={$row['id']}");
-    exit;
-}
 
-// 2. Simpan Detail Penerimaan Barang (Call SP + Trigger Kartu Stok & Status PO)
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['btn_simpan_terima'])) {
-    $idpenerimaan = intval($_POST['idpenerimaan']);
-    $idpengadaan  = intval($_POST['idpengadaan']);
-    $idbarang     = intval($_POST['idbarang']);
-    $jumlah       = intval($_POST['jumlah_terima']);
-    $harga        = intval($_POST['harga_satuan_terima']);
-    
-    $sql = "CALL sp_tambah_detail_penerimaan($idpenerimaan, $idbarang, $jumlah, $harga)";
-    if (mysqli_query($conn, $sql)) {
-        while (mysqli_more_results($conn) && mysqli_next_result($conn)) {;}
-        $message = "Penerimaan barang tercatat! Stok & Status Pengadaan otomatis diperbarui.";
-        $msg_type = "success";
-        $selected_po = $idpengadaan;
-        $active_trm  = $idpenerimaan;
+    if ($idpengadaan > 0) {
+        mysqli_query($conn, "CALL sp_buat_penerimaan($idpengadaan, $iduser, @new_id_trm)");
+        $res = mysqli_query($conn, "SELECT @new_id_trm AS id_baru");
+        $row = mysqli_fetch_assoc($res);
+        $id_baru = $row['id_baru'];
+        header("Location: penerimaan.php?idtrm=" . $id_baru);
+        exit;
     } else {
-        $message = "Peringatan: " . mysqli_error($conn);
-        $msg_type = "danger";
+        $pesan = "Silakan pilih surat pesanan (PO) terlebih dahulu!";
+        $tipe_pesan = "danger";
     }
 }
+
+// 2. Catat Jumlah Barang yang Diterima (Memanggil SP sp_tambah_detail_penerimaan)
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['btn_terima_item'])) {
+    $idpenerimaan  = (int)$_POST['idpenerimaan'];
+    $idbarang      = (int)$_POST['idbarang'];
+    $jumlah_terima = (int)$_POST['jumlah_terima'];
+    $harga_terima  = (int)$_POST['harga_terima'];
+
+    // Cek sisa pesanan menggunakan function f_sisa_penerimaan
+    $trm_info = mysqli_fetch_assoc(mysqli_query($conn, "SELECT idpengadaan FROM penerimaan WHERE idpenerimaan = $idpenerimaan"));
+    $idpo_ref = $trm_info['idpengadaan'];
+    $sisa = mysqli_fetch_assoc(mysqli_query($conn, "SELECT f_sisa_penerimaan($idpo_ref, $idbarang) AS sisa"))['sisa'] ?? 0;
+
+    if ($jumlah_terima <= 0 || $jumlah_terima > $sisa) {
+        $pesan = "Jumlah diterima tidak valid! Maksimal sisa pesanan yang belum datang adalah $sisa unit.";
+        $tipe_pesan = "danger";
+    } else {
+        if (mysqli_query($conn, "CALL sp_tambah_detail_penerimaan($idpenerimaan, $idbarang, $jumlah_terima, $harga_terima)")) {
+            $pesan = "Barang masuk berhasil dicatat dan stok gudang otomatis bertambah!";
+        } else {
+            $pesan = "Gagal mencatat penerimaan: " . mysqli_error($conn);
+            $tipe_pesan = "danger";
+        }
+    }
+}
+
+$active_trm = isset($_GET['idtrm']) ? (int)$_GET['idtrm'] : 0;
 ?>
 
-<h4 class="fw-bold mb-1"><i class="fa-solid fa-truck-ramp-box text-pink-pastel me-2"></i>2. Penerimaan Barang (Utuh / Sebagian)</h4>
-<p class="text-muted small mb-4">Hanya pengadaan yang belum tuntas yang dapat diproses. Jumlah terima otomatis dibatasi sesuai sisa pesanan.</p>
+<h4 class="fw-bold mb-1"><i class="fa-solid fa-truck-ramp-box text-pink-pastel me-2"></i>Penerimaan Barang Masuk</h4>
+<p class="text-muted small mb-4">Catat kedatangan barang dari vendor untuk memperbarui stok gudang secara otomatis.</p>
 
-<?php if ($message): ?>
-    <div class="alert alert-<?= $msg_type ?> alert-dismissible fade show"><?= $message ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+<?php if (!empty($pesan)): ?>
+    <div class="alert alert-<?= $tipe_pesan ?> alert-dismissible fade show rounded-3 small">
+        <i class="fa-solid <?= $tipe_pesan == 'success' ? 'fa-circle-check' : 'fa-circle-exclamation' ?> me-1"></i> <?= $pesan ?>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 <?php endif; ?>
 
 <div class="row g-4">
-    <div class="col-md-5">
-        <!-- Pilih Pengadaan yang Belum Tuntas (Status P atau B) -->
-        <div class="bg-light p-4 rounded-4 border mb-4">
-            <h6 class="fw-bold mb-3">A. Mulai Dokumen Penerimaan</h6>
-            <form method="POST" action="penerimaan.php">
+    <!-- KOLOM KIRI: FORM CATAT KEDATANGAN BARANG -->
+    <div class="col-lg-5">
+        <div class="card border rounded-4 p-3 mb-3 bg-light bg-opacity-50">
+            <h6 class="fw-bold mb-3"><i class="fa-solid fa-clipboard-check text-pink-pastel me-1"></i> Catat Kedatangan Barang</h6>
+            <form method="POST">
                 <div class="mb-3">
-                    <label class="form-label small fw-bold">Pilih Pengadaan (Belum Tuntas)</label>
-                    <select name="idpengadaan" class="form-select" required>
-                        <option value="">-- Pilih Pengadaan --</option>
+                    <label class="form-label small fw-semibold">Pilih Surat Pesanan (PO)</label>
+                    <select name="idpengadaan" class="form-select rounded-3" required>
+                        <option value="">-- Pilih Nomor Pesanan --</option>
                         <?php
-                        $q_po = mysqli_query($conn, "SELECT p.idpengadaan, v.nama_vendor, p.status FROM pengadaan p JOIN vendor v ON p.vendor_idvendor = v.idvendor WHERE p.status IN ('P', 'B') AND p.total_nilai > 0 ORDER BY p.idpengadaan DESC");
+                        $q_po = mysqli_query($conn, "SELECT p.*, v.nama_vendor FROM pengadaan p JOIN vendor v ON p.vendor_idvendor = v.idvendor WHERE p.status IN ('P', 'B') ORDER BY p.idpengadaan DESC");
                         while ($po = mysqli_fetch_assoc($q_po)):
-                            $ket = ($po['status'] == 'B') ? 'Diterima Sebagian' : 'Belum Diterima';
+                            $ket_st = ($po['status'] == 'P') ? 'Belum Dikirim' : 'Diterima Sebagian';
                         ?>
-                            <option value="<?= $po['idpengadaan'] ?>" <?= ($selected_po == $po['idpengadaan']) ? 'selected' : '' ?>>
-                                #PO-<?= $po['idpengadaan'] ?> | <?= $po['nama_vendor'] ?> (<?= $ket ?>)
-                            </option>
+                        <option value="<?= $po['idpengadaan'] ?>">#PO-<?= $po['idpengadaan'] ?> - <?= $po['nama_vendor'] ?> (<?= $ket_st ?>)</option>
                         <?php endwhile; ?>
                     </select>
                 </div>
-                <button type="submit" name="btn_buat_penerimaan" class="btn btn-primary w-100 fw-bold">
-                    Buat Dokumen Penerimaan
+                <button type="submit" name="btn_buat_trm" class="btn btn-primary w-100 fw-semibold rounded-3">
+                    <i class="fa-solid fa-box-open me-1"></i> Proses Penerimaan Barang
                 </button>
             </form>
         </div>
 
-        <!-- Form Input Barang Diterima -->
-        <?php if ($active_trm > 0 && $selected_po > 0): ?>
-        <div class="p-4 rounded-4 border border-2" style="border-color: #f472b6 !important; background: #fff;">
-            <h6 class="fw-bold text-pink-pastel mb-3">B. Input Barang Diterima (#TRM-<?= $active_trm ?> | Ref #PO-<?= $selected_po ?>)</h6>
-            <form method="POST" action="penerimaan.php?idpo=<?= $selected_po ?>&idtrm=<?= $active_trm ?>">
-                <input type="hidden" name="idpenerimaan" value="<?= $active_trm ?>">
-                <input type="hidden" name="idpengadaan" value="<?= $selected_po ?>">
+        <?php if ($active_trm > 0): 
+            $trm_aktif = mysqli_fetch_assoc(mysqli_query($conn, "SELECT t.*, p.vendor_idvendor, v.nama_vendor FROM penerimaan t JOIN pengadaan p ON t.idpengadaan = p.idpengadaan JOIN vendor v ON p.vendor_idvendor = v.idvendor WHERE t.idpenerimaan = $active_trm"));
+            $idpo_aktif = $trm_aktif['idpengadaan'];
+        ?>
+        <div class="card border-2 rounded-4 p-3 shadow-sm" style="border-color: #f472b6 !important;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <h6 class="fw-bold text-pink-pastel mb-0">Input Barang Datang (#TRM-<?= $active_trm ?>)</h6>
+                    <span class="small text-muted">Ref: <strong>#PO-<?= $idpo_aktif ?></strong> &bull; <?= $trm_aktif['nama_vendor'] ?></span>
+                </div>
+                <a href="penerimaan.php" class="btn btn-sm btn-success rounded-pill px-3 fw-semibold">
+                    <i class="fa-solid fa-check me-1"></i> Selesai
+                </a>
+            </div>
 
-                <div class="mb-3">
-                    <label class="form-label small fw-bold">Barang dalam Pengadaan (Menampilkan Sisa)</label>
-                    <select name="idbarang" id="trm_barang" class="form-select" required onchange="isiSisaTerima()">
-                        <option value="">-- Pilih Barang --</option>
+            <form method="POST" class="mt-2">
+                <input type="hidden" name="idpenerimaan" value="<?= $active_trm ?>">
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold">Barang yang Diterima</label>
+                    <select name="idbarang" id="select_barang_trm" class="form-select rounded-3" onchange="updateHargaDefault()" required>
+                        <option value="">-- Pilih Barang dari Pesanan --</option>
                         <?php
-                        $q_det = mysqli_query($conn, "SELECT dp.idbarang, b.nama, dp.harga_satuan, dp.jumlah AS pesan, f_sisa_penerimaan($selected_po, dp.idbarang) AS sisa 
-                                                      FROM detail_pengadaan dp 
-                                                      JOIN barang b ON dp.idbarang = b.idbarang 
-                                                      WHERE dp.idpengadaan = $selected_po HAVING sisa > 0");
-                        while ($rd = mysqli_fetch_assoc($q_det)):
+                        $q_item_po = mysqli_query($conn, "SELECT dp.*, b.nama, f_sisa_penerimaan(dp.idpengadaan, dp.idbarang) AS sisa_qty FROM detail_pengadaan dp JOIN barang b ON dp.idbarang = b.idbarang WHERE dp.idpengadaan = $idpo_aktif HAVING sisa_qty > 0");
+                        while ($it = mysqli_fetch_assoc($q_item_po)):
                         ?>
-                            <option value="<?= $rd['idbarang'] ?>" data-sisa="<?= $rd['sisa'] ?>" data-harga="<?= $rd['harga_satuan'] ?>">
-                                <?= $rd['nama'] ?> (Pesan: <?= $rd['pesan'] ?> | Sisa Belum Terima: <?= $rd['sisa'] ?>)
-                            </option>
+                        <option value="<?= $it['idbarang'] ?>" data-harga="<?= $it['harga_satuan'] ?>" data-sisa="<?= $it['sisa_qty'] ?>">
+                            <?= $it['nama'] ?> (Sisa Pesanan: <?= $it['sisa_qty'] ?> unit)
+                        </option>
                         <?php endwhile; ?>
                     </select>
                 </div>
-
                 <div class="row g-2 mb-3">
                     <div class="col-6">
-                        <label class="form-label small fw-bold">Jumlah Diterima Sekarang</label>
-                        <input type="number" name="jumlah_terima" id="trm_jumlah" class="form-control" min="1" required>
-                        <small class="text-muted" id="label_maks">Maksimal sesuai sisa</small>
+                        <label class="form-label small fw-semibold">Jumlah Diterima</label>
+                        <input type="number" name="jumlah_terima" id="input_qty_trm" class="form-control rounded-3" min="1" value="1" required>
                     </div>
                     <div class="col-6">
-                        <label class="form-label small fw-bold text-pink-pastel">Harga Terima (Bisa Diedit)</label>
-                        <input type="number" name="harga_satuan_terima" id="trm_harga" class="form-control border-danger" required>
+                        <label class="form-label small fw-semibold">Harga Beli Satuan (Rp)</label>
+                        <input type="number" name="harga_terima" id="input_harga_trm" class="form-control rounded-3" min="0" required>
                     </div>
                 </div>
-
-                <button type="submit" name="btn_simpan_terima" class="btn btn-primary w-100 fw-bold">
-                    Simpan Penerimaan Barang
+                <button type="submit" name="btn_terima_item" class="btn btn-primary w-100 fw-semibold rounded-3">
+                    <i class="fa-solid fa-check-circle me-1"></i> Simpan ke Stok Gudang
                 </button>
             </form>
+
+            <script>
+            function updateHargaDefault() {
+                var sel = document.getElementById('select_barang_trm');
+                var opt = sel.options[sel.selectedIndex];
+                if (opt.value !== "") {
+                    document.getElementById('input_harga_trm').value = opt.getAttribute('data-harga');
+                    document.getElementById('input_qty_trm').max = opt.getAttribute('data-sisa');
+                    document.getElementById('input_qty_trm').value = opt.getAttribute('data-sisa');
+                }
+            }
+            </script>
         </div>
         <?php endif; ?>
     </div>
 
-    <div class="col-md-7">
-        <h6 class="fw-bold mb-3">Riwayat Penerimaan Barang (Status Otomatis Selesai)</h6>
+    <!-- KOLOM KANAN: RIWAYAT BARANG MASUK GUDANG -->
+    <div class="col-lg-7">
+        <h6 class="fw-bold mb-3"><i class="fa-solid fa-warehouse text-pink-pastel me-1"></i> Riwayat Barang Masuk Gudang</h6>
         <div class="table-responsive">
             <table class="table align-middle">
                 <thead>
-                    <tr><th>ID Terima</th><th>Ref PO</th><th>Produk</th><th>Diterima</th><th>Harga Final</th><th>Subtotal</th></tr>
+                    <tr>
+                        <th>No Terima</th>
+                        <th>Ref PO</th>
+                        <th>Produk</th>
+                        <th>Diterima</th>
+                        <th>Harga Satuan</th>
+                        <th>Subtotal</th>
+                    </tr>
                 </thead>
                 <tbody>
                     <?php
-                    $q = "SELECT pn.idpenerimaan, pn.idpengadaan, b.nama, dp.jumlah_terima, dp.harga_satuan_terima, dp.sub_total_terima 
-                          FROM penerimaan pn 
-                          JOIN detail_penerimaan dp ON pn.idpenerimaan = dp.idpenerimaan
-                          JOIN barang b ON dp.barang_idbarang = b.idbarang
-                          ORDER BY pn.idpenerimaan DESC";
-                    $res = mysqli_query($conn, $q);
-                    while ($row = mysqli_fetch_assoc($res)):
+                    $q_list = mysqli_query($conn, "SELECT dt.*, t.idpengadaan, t.created_at, b.nama FROM detail_penerimaan dt JOIN penerimaan t ON dt.idpenerimaan = t.idpenerimaan JOIN barang b ON dt.barang_idbarang = b.idbarang ORDER BY dt.iddetail_penerimaan DESC");
+                    if (mysqli_num_rows($q_list) == 0):
+                    ?>
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4 small">Belum ada riwayat penerimaan barang masuk.</td>
+                        </tr>
+                    <?php
+                    endif;
+                    while ($row = mysqli_fetch_assoc($q_list)):
                     ?>
                     <tr>
-                        <td class="fw-bold">#TRM-<?= $row['idpenerimaan'] ?> <span class="badge bg-success ms-1">Selesai</span></td>
-                        <td>#PO-<?= $row['idpengadaan'] ?></td>
+                        <td class="fw-bold text-pink-pastel">#TRM-<?= $row['idpenerimaan'] ?><br><span class="small text-muted fw-normal"><?= $row['created_at'] ?></span></td>
+                        <td class="fw-semibold">#PO-<?= $row['idpengadaan'] ?></td>
                         <td class="fw-semibold"><?= $row['nama'] ?></td>
-                        <td class="text-success fw-bold">+<?= $row['jumlah_terima'] ?></td>
-                        <td>Rp <?= number_format($row['harga_satuan_terima'], 0, ',', '.') ?></td>
-                        <td class="fw-bold text-pink-pastel">Rp <?= number_format($row['sub_total_terima'], 0, ',', '.') ?></td>
+                        <td><span class="badge bg-success-subtle text-success">+<?= $row['jumlah_terima'] ?></span></td>
+                        <td class="small">Rp <?= number_format($row['harga_satuan_terima'], 0, ',', '.') ?></td>
+                        <td class="fw-bold">Rp <?= number_format($row['sub_total_terima'], 0, ',', '.') ?></td>
                     </tr>
                     <?php endwhile; ?>
                 </tbody>
@@ -150,21 +188,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['btn_simpan_terima'])) 
         </div>
     </div>
 </div>
-
-<script>
-function isiSisaTerima() {
-    const sel = document.getElementById('trm_barang');
-    const opt = sel.options[sel.selectedIndex];
-    if (opt && opt.value !== "") {
-        const sisa = opt.getAttribute('data-sisa');
-        const harga = opt.getAttribute('data-harga');
-        const inpJml = document.getElementById('trm_jumlah');
-        inpJml.value = sisa;
-        inpJml.max = sisa;
-        document.getElementById('label_maks').innerText = 'Maksimal terima: ' + sisa;
-        document.getElementById('trm_harga').value = harga;
-    }
-}
-</script>
 
 <?php include 'footer.php'; ?>
